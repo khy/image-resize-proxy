@@ -1,1 +1,1 @@
-GET   /:key   controllers.Application.index(key)
+GET   /:key   controllers.Application.image(key)
