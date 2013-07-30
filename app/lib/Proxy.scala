@@ -62,6 +62,6 @@ class DefaultProxy extends Proxy {
 
   def retriever = new GiltRetriever
 
-  def resizer = new ScrimageResizer
+  def resizer = new AwtResizer
 
 }
