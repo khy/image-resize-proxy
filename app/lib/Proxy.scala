@@ -22,10 +22,10 @@ trait Proxy {
 
   def retrieve(
     key: String,
-    height: Option[Int],
-    width: Option[Int]
+    width: Option[Int],
+    height: Option[Int]
   ): Future[Option[Image]] = {
-    val versionCacheKey = Cache.versionKey(key, height, width)
+    val versionCacheKey = Cache.versionKey(key, width, height)
     val optImageVersion = versionCache.get(versionCacheKey)
 
     optImageVersion.map { imageVersion =>
@@ -41,7 +41,7 @@ trait Proxy {
         optOriginalImage.map { originalImage =>
           originalCache.set(key, originalImage)
 
-          resizer.resize(originalImage, height, width).map { imageVersion =>
+          resizer.resize(originalImage, width, height).map { imageVersion =>
             versionCache.set(versionCacheKey, imageVersion)
             Some(imageVersion)
           }

@@ -4,8 +4,8 @@ import java.awt.Image
 
 object Cache {
 
-  def versionKey(key: String, height: Option[Int], width: Option[Int]) = {
-    Seq(Some(key), height.map(_.toString), width.map(_.toString)).flatten.mkString("-")
+  def versionKey(key: String, width: Option[Int], height: Option[Int]) = {
+    Seq(Some(key), width.map(_.toString), height.map(_.toString)).flatten.mkString("-")
   }
 
 }

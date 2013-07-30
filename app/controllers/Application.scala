@@ -13,11 +13,11 @@ import lib.Proxy
 object Application extends Controller {
 
   def image(key: String) = Action { request =>
-    val height = request.queryString.get("h").flatMap(_.headOption).map(_.toInt)
-    val width = request.queryString.get("w").flatMap(_.headOption).map(_.toInt)
+    val width = getDimension(request, "w")
+    val height = getDimension(request, "h")
 
     Async {
-      Proxy.instance.retrieve(key, height, width).map { optImage =>
+      Proxy.instance.retrieve(key, width, height).map { optImage =>
         optImage.map { image =>
           image match {
             case renderedImage: RenderedImage => {
@@ -32,6 +32,10 @@ object Application extends Controller {
         }
       }
     }
+  }
+
+  def getDimension(request: RequestHeader, key: String): Option[Int] = {
+    request.queryString.get(key).flatMap(_.headOption).map(_.toInt)
   }
 
 }
