@@ -56,7 +56,7 @@ trait Proxy {
 
 class DefaultProxy extends Proxy {
 
-  def originalCache = new NullCache
+  def originalCache = new PlayCache(100000)
 
   def versionCache = new NullCache
 
