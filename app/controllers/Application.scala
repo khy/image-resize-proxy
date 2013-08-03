@@ -12,12 +12,14 @@ import lib.Proxy
 
 object Application extends Controller {
 
+  lazy val proxy = Proxy.instance
+
   def image(key: String) = Action { request =>
     val width = getDimension(request, "w")
     val height = getDimension(request, "h")
 
     Async {
-      Proxy.instance.retrieve(key, width, height).map { optImage =>
+      proxy.get(key, width, height).map { optImage =>
         optImage.map { image =>
           image match {
             case renderedImage: RenderedImage => {

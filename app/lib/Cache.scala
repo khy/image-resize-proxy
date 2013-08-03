@@ -1,6 +1,17 @@
 package lib
 
+import scala.concurrent.{Future, promise}
+import java.util.concurrent.ConcurrentHashMap
+import scala.collection.JavaConverters._
 import java.awt.Image
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.Logger
+
+trait Cache {
+
+  def apply(key: String)(getImage: () => Future[Option[Image]]): Future[Option[Image]]
+
+}
 
 object Cache {
 
@@ -10,31 +21,42 @@ object Cache {
 
 }
 
-trait Cache {
+trait OriginalCache extends Cache
 
-  def get(key: String): Option[Image]
+trait VersionCache extends Cache {
 
-  def set(key: String, image: Image): Unit
+  def apply(key: String, width: Option[Int], height: Option[Int])(getImage: () => Future[Option[Image]]): Future[Option[Image]] = {
+    if (width.isDefined || height.isDefined) {
+      val versionKey = Cache.versionKey(key, width, height)
+      apply(versionKey)(getImage)
+    } else {
+      getImage()
+    }
+  }
+
+}
+
+trait ConcurrentCache extends Cache {
+
+  private val imageMap = new ConcurrentHashMap[String, Future[Option[Image]]].asScala
+
+  def apply(key: String)(getImage: () => Future[Option[Image]]): Future[Option[Image]] = {
+    Logger.info("Getting key: %s".format(key))
+    val imagePromise = promise[Option[Image]]
+
+    imageMap.putIfAbsent(key, imagePromise.future).getOrElse {
+      getImage() onSuccess {
+        case optImage => {
+          Logger.info("Setting key: %s".format(key))
+          imagePromise success optImage
+        }
+      }
+      imagePromise.future
+    }
+  }
 
 }
 
-class NullCache extends Cache {
+class ConcurrentOriginalCache extends OriginalCache with ConcurrentCache
 
-  def get(key: String) = None
-
-  def set(key: String, image: Image) = Unit
-
-}
-
-class PlayCache(
-  val expiration: Int
-) extends Cache {
-
-  import play.api.cache.{Cache => UnderlyingCache}
-  import play.api.Play.current
-
-  def get(key: String) = UnderlyingCache.getAs[Image](key)
-
-  def set(key: String, image: Image) = UnderlyingCache.set(key, image, expiration)
-
-}
+class ConcurrentVersionCache extends VersionCache with ConcurrentCache
